@@ -1,24 +1,30 @@
 {
-    "testRunName": "",
-    "triggerTokens": "",
-    "baseResolution": 1024,
-    "generationParams": {
-        "sampler": "euler_ancestral",
-        "scheduler": "karras",
-        "steps": 20,
-        "cfg": 7,
-        "seed": 123456789
+  "testRunName": "",
+  "serverUrl": "localhost:8188",
+  "triggerTokens": "",
+  "baseResolution": 1024,
+  "loraStrengthValues": [
+    1.0,
+    0.75
+  ],
+  "generationParams": {
+    "ckpt_name": "",
+    "sampler_name": "euler_ancestral",
+    "scheduler": "karras",
+    "steps": 20,
+    "cfg": 7,
+    "seed": 123456789
+  },
+  "testPrompts": {
+    "init": {
+      "enabled": true,
+      "positive": "${triggerTokens}",
+      "negative": ""
     },
-    "testPrompts": {
-        "init": {
-            "enabled": true,
-            "positive": "{{triggerTokens}}",
-            "negative": ""
-        },
-        "simple_portrait": {
-            "enabled": true,
-            "postive": "{{triggerTokens}}, looking at viewer, arms crossed, happy, outdoors, portrait, simple background",
-            "negative": ""
-        }
+    "simple_portrait": {
+      "enabled": true,
+      "postive": "${triggerTokens}, looking at viewer, arms crossed, happy, outdoors, portrait, simple background",
+      "negative": ""
     }
+  }
 }
