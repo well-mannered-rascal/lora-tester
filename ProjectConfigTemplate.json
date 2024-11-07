@@ -1,33 +1,37 @@
 {
   "testRunName": "",
-  "serverUrl": "localhost:8188",
+  "serverUrl": "http://localhost:8188",
   "triggerTokens": "",
   "baseResolution": 1024,
+  "enableReferenceOutputs": true,
   "loraStrengthValues": [
     1.0,
     0.75
   ],
-  "loraClipStrengthValues":[
+  "_loraClipStrengthValues": [
     1.0
   ],
   "generationParams": {
     "ckpt_name": "",
     "sampler_name": "euler_ancestral",
-    "scheduler": "karras",
+    "scheduler": "sgm_uniform",
     "steps": 20,
     "cfg": 7,
-    "seed": 123456789
+    "seed": 123456789,
+    "batch_size": 1
   },
-  "testPrompts": {
-    "init": {
+  "testPrompts": [
+    {
+      "name": "init",
       "enabled": true,
       "positive": "${triggerTokens}",
       "negative": ""
     },
-    "simple_portrait": {
+    {
+      "name": "simple_portrait",
       "enabled": true,
-      "postive": "${triggerTokens}, looking at viewer, arms crossed, happy, outdoors, portrait, simple background",
+      "positive": "${triggerTokens}, looking at viewer, arms crossed, happy, outdoors, portrait, simple background",
       "negative": ""
     }
-  }
+  ]
 }
