@@ -1,5 +1,18 @@
 // lora tester 2024
 
+
+// TODO for next sesh 11/6/24
+/**
+ * - handle actual response data from /history call and save images to the local project directory 
+ *        (make this a toggle switch since its effectively doubling the hdd burden, as comfyui will also be saving images itself)
+ * - investigate how to programmatically bypass lora node to enable "reference outputs" for each prompt batch
+ * 
+ * - verify that processed output from /history request still has prompt data on it
+ * 
+ * -various inline TODOs all over the code
+ */
+
+
 import { join } from "@std/path";
 
 import { fileExists, getFilesWithExtension, loadJsonFile } from "./util.ts";
