@@ -36,8 +36,7 @@ eventually include less important variety such as time of day, clothing, etc.
   - reside under /outputs in project directory
   - outputs/{runName}/{promptName}/
   - filenames:
-    - {loraName}^{loraStrength}-{with/without}-{promptName}-{batchNumber}.png
-    - vicky_v3-000100^0.75-with-simple_portrait-5.png
+    - {testRunName}-{loraName}^{loraStrength}-{promptName}-{batchNumber}.png
 
 ### Program Sequence
 
