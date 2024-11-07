@@ -63,9 +63,6 @@
     }
   },
 
-  
-
-
   "7": {
     "inputs": {
       "text": "${negative}",
@@ -97,7 +94,7 @@
   },
   "9": {
     "inputs": {
-      "filename_prefix": "ComfyUI",
+      "filename_prefix": "${filenamePrefix}",
       "images": [
         "8",
         0
@@ -125,6 +122,6 @@
     "class_type": "LoraLoader",
     "_meta": {
       "title": "Load LoRA"
+    }
   }
-}
 }
