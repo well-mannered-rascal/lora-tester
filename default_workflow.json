@@ -8,7 +8,7 @@
       "scheduler": "${scheduler}",
       "denoise": 1,
       "model": [
-        "4",
+        "10",
         0
       ],
       "positive": [
@@ -53,7 +53,7 @@
     "inputs": {
       "text": "${positive}",
       "clip": [
-        "4",
+        "10",
         1
       ]
     },
@@ -70,7 +70,7 @@
     "inputs": {
       "text": "${negative}",
       "clip": [
-        "4",
+        "10",
         1
       ]
     },
@@ -107,5 +107,24 @@
     "_meta": {
       "title": "Save Image"
     }
+  },
+  "10": {
+    "inputs": {
+      "lora_name": "${loraModel}",
+      "strength_model": "${loraStrength}",
+      "strength_clip": "${loraClipStrength}",
+      "model": [
+        "4",
+        0
+      ],
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "LoraLoader",
+    "_meta": {
+      "title": "Load LoRA"
   }
+}
 }
