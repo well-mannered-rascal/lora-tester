@@ -1,49 +1,44 @@
 // lora tester 2024
 
-
-// TODO for next sesh 11/6/24
+// TODO for next sesh 11/7/24
 /**
- * - handle actual response data from /history call and save images to the local project directory 
- *        (make this a toggle switch since its effectively doubling the hdd burden, as comfyui will also be saving images itself)
+ *  - investigate why the fuck i cant get
+ *
  * - investigate how to programmatically bypass lora node to enable "reference outputs" for each prompt batch
- * 
+ *
  * - verify that processed output from /history request still has prompt data on it
- * 
+ *
  * -various inline TODOs all over the code
  */
 
-
 import { join } from "@std/path";
+import { ensureDir } from "@std/fs";
 
-import { fileExists, getFilesWithExtension, loadJsonFile } from "./util.ts";
+import {
+  fileExists,
+  getFilesWithExtension,
+  getUniqueFilePath,
+  loadJsonFile,
+  saveReadableStreamToFile,
+} from "./util.ts";
+import { createUniqueDirectory } from "./util.ts";
 
 // CONSTANTS
 const PROJECT_CONF_FILENAME = "project.json" as const;
+const TEST_RESULT_DIRNAME = "test_runs";
 
 /**
- * Connect to a comfy ui instance on the given serverUrl with the given message handlers
+ * Take a workflow payload and execute it, waiting for the result
+ * @param workflow
+ * @param serverUrl
+ * @param socket
+ * @returns The prompt_id for optional fetching at a later time
  */
-// function connect(
-//   serverUrl: string,
-//   onMessage: (event: MessageEvent) => void,
-//   onError: (event: Event) => void,
-//   onOpen?: (event: Event) => void,
-//   onClose?: (event: Event) => void,
-// ) {
-//   const socket = new WebSocket(serverUrl);
-//   socket.addEventListener("message", onMessage);
-//   socket.addEventListener("error", onError);
-
-//   onOpen && socket.addEventListener("open", onOpen);
-//   onClose && socket.addEventListener("close", onClose);
-// }
-
-// Function to execute a single workflow and await its completion
 async function executePromptSync(
   workflow: JSON,
   serverUrl: string,
   socket: WebSocket,
-): Promise<void> {
+): Promise<string> {
   const payload = {
     prompt: workflow,
     clientId: "LORA_TESTER",
@@ -81,14 +76,7 @@ async function executePromptSync(
     socket.addEventListener("message", onMessage);
   });
 
-  // Fetch actual image
-  const historyResponse = await fetch(`http://localhost:8188/history/${prompt_id}`);
-  console.log(historyResponse)
-
-  // TODO: Actually process the response.body ReadableStream
-
-  // Save image to local project output directory
-
+  return prompt_id;
 }
 
 async function main() {
@@ -191,6 +179,9 @@ async function main() {
 
     if (key === "ckpt_name") {
       value = remoteModelName;
+    } else if (key === "seed" && value === -1) {
+      value = Math.floor(Math.random() * (10000000000));
+      console.log("random seed", value);
     }
     workflowTemplateStr = workflowTemplateStr.replaceAll(
       placeholder,
@@ -210,6 +201,16 @@ async function main() {
   console.log("Expected image output count: ", totalTestOutputs);
 
   // TODO: Prompt user after displaying expected image count to get consent first <3
+
+  // ensure output and test run directories are created if necessary
+  let testRunDir;
+  if (projectConf["saveOutputsLocally"]) {
+    await ensureDir(join(projectPath, TEST_RESULT_DIRNAME));
+
+    testRunDir = await createUniqueDirectory(
+      join(projectPath, TEST_RESULT_DIRNAME, projectConf["testRunName"]),
+    );
+  }
 
   // start generation loop
   for (const lora of remoteLoraNames) {
@@ -267,17 +268,56 @@ async function main() {
         ); // TODO: support loraClipStrength array
 
         // apply filename {loraName}^{loraStrength}-{with/without}-{promptName}-{batchNumber}.png
+        const filenamePrefix = `${
+          projectConf["testRunName"]
+        }-${lora}^${loraStrength}-${promptConf["name"]}`;
         workflowTemplateStr = workflowTemplateStr.replaceAll(
           "${filenamePrefix}",
-          `${projectConf["testRunName"]}-${lora}^${loraStrength}-${
-            promptConf["name"]
-          }`,
+          filenamePrefix,
         );
 
         // Convert to JSON and execute
         const payload = JSON.parse(workflowTemplateStr);
 
-        executePromptSync(payload, projectConf["serverUrl"], comfySocket);
+        const promptId = await executePromptSync(
+          payload,
+          projectConf["serverUrl"],
+          comfySocket,
+        );
+
+        // Fetch image from /history if we actually want to save it locally as well
+        if (projectConf["saveOutputsLocally"] && testRunDir) {
+          const historyResponse = await fetch(
+            `http://localhost:8188/history/${promptId}`,
+            {
+              method: "GET",
+              headers: {
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+                "User-Agent": "Mozilla/5.0", // Simulate a browser request
+                "Connection": "keep-alive",
+                "Host": "localhost:8188"
+              },
+            },
+          );
+
+          console.log(historyResponse);
+
+          console.log(`http://localhost:8188/history/${promptId}`);
+          const promptInfo = await historyResponse.text();
+          console.log(promptInfo);
+          // if (!historyResponse.body) {
+          //   throw new Error(
+          //     "Failed to get ReadableStream from /history response!",
+          //   );
+          // }
+
+          // ./output/{}
+
+          // save history response as png
+          // const fullUniqueFilePath = getUniqueFilePath(join(testRunDir, `${filenamePrefix}.png`))
+          // await saveReadableStreamToFile(historyResponse.body, './sandbox/test.png')
+        }
+
         return;
       }
     }
