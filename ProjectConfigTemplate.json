@@ -4,6 +4,7 @@
   "triggerTokens": "",
   "baseResolution": 1024,
   "enableReferenceOutputs": true,
+  "saveOutputsLocally": true,
   "loraStrengthValues": [
     1.0,
     0.75
