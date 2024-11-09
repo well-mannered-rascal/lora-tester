@@ -10,9 +10,7 @@ If this is the first time running for the given directory, a `project.json` file
 necessary configuration and must be fully configured for the program to run correctly.
 
 ## Configuration
-### Comfyui
-Please ensure your comfyui instance has `--listen` in the startup commandline args so that your comfyui server can receive requests from the lora tester.
-
+A project.json template will be generated on first run of the command in the directory specified by the user.
 ### project.json
 ```
 {
