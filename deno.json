@@ -1,7 +1,9 @@
 {
   "deno.autocomplete": true,
   "tasks": {
-    "dev": "deno run --allow-all main.ts"
+    "dev": "deno run --allow-all main.ts",
+    "compile-win": "deno compile --unstable --allow-all --target x86_64-pc-windows-msvc --output ./dist/lora_tester.exe main.ts",
+    "compile-lnx": "deno compile --unstable --allow-all --output ./dist/lora_tester main.ts"
   },
   "imports": {
     "@std/fs": "jsr:@std/fs@^1.0.5",

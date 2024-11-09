@@ -3,7 +3,10 @@
   "specifiers": {
     "jsr:@std/fs@^1.0.5": "1.0.5",
     "jsr:@std/path@^1.0.7": "1.0.8",
-    "jsr:@std/path@^1.0.8": "1.0.8"
+    "jsr:@std/path@^1.0.8": "1.0.8",
+    "npm:meta-png@*": "1.0.6",
+    "npm:png-metadata@*": "1.0.2",
+    "npm:pngjs@*": "7.0.0"
   },
   "jsr": {
     "@std/fs@1.0.5": {
@@ -14,6 +17,17 @@
     },
     "@std/path@1.0.8": {
       "integrity": "548fa456bb6a04d3c1a1e7477986b6cffbce95102d0bb447c67c4ee70e0364be"
+    }
+  },
+  "npm": {
+    "meta-png@1.0.6": {
+      "integrity": "sha512-eQtEi5E9axqwqA/sDK1dyhX9kYHCUe2m+45aQ3JHrozjGPs+/ab+hdhPp7A3GUNW+ZAbavrsg5xQ4r5jkGDX+A=="
+    },
+    "png-metadata@1.0.2": {
+      "integrity": "sha512-9evMsSVWxOlMmL/LtFo1LPxixyNg6KmFYIUZ/zdh4GF0kcc9cy7kRmXpCwrLMeh1+kaxFGmbk3WCHKEezSu2Bw=="
+    },
+    "pngjs@7.0.0": {
+      "integrity": "sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow=="
     }
   },
   "workspace": {
