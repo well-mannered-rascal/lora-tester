@@ -2,7 +2,74 @@
 
 Utility for batch testing stable diffusion lora models.
 
-## MVP
+## Usage (Compiled Binary Release)
+
+`./lora_tester.exe <path/to/lora/models>`
+
+If this is the first time running for the given directory, a `project.json` file will be generated. You will be prompted to edit the configuration file before running again. This file contains all of the
+necessary configuration and must be fully configured for the program to run correctly.
+
+## Configuration
+### Comfyui
+Please ensure your comfyui instance has `--listen` in the startup commandline args so that your comfyui server can receive requests from the lora tester.
+
+### project.json
+```
+{
+  "testRunName": "",
+
+  "serverUrl": "http://localhost:8188",
+
+  "triggerTokens": "", // keywords to trigger your lora
+
+  "baseResolution": 1024,
+
+  // TODO: will toggle including reference images that do not have the lora applied for each prompt
+  "enableReferenceOutputs": true, 
+
+  // whether or not to save images to the local models dir
+  "saveOutputsLocally": true,
+
+  "loraStrengthValues": [
+    1.0,
+    0.75
+  ],
+
+  // TODO not implemented
+  "_loraClipStrengthValues": [
+    1.0
+  ],
+
+  // Configure the names exactly as you would in comfy
+  "generationParams": {
+    "ckpt_name": "",
+    "sampler_name": "euler_ancestral",
+    "scheduler": "sgm_uniform",
+    "steps": 20,
+    "cfg": 7,
+    "seed": -1, // Seed for the whole test run. -1 is random
+    "batch_size": 1
+  },
+
+  // Add your custom test prompts here following the same format. Use ${triggerTokens} to place where your activation tokens should go.
+  "testPrompts": [
+    {
+      "name": "init",
+      "enabled": true,
+      "positive": "${triggerTokens}",
+      "negative": ""
+    },
+    {
+      "name": "simple_portrait",
+      "enabled": true,
+      "positive": "${triggerTokens}, looking at viewer, arms crossed, happy, outdoors, portrait, simple background",
+      "negative": ""
+    }
+  ]
+}
+```
+
+## Boring Design Stuff
 
 A command line utility that takes a directory of models, a generation config,
 and a trigger word/base prompt, and runs each model at different strength
