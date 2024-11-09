@@ -4,7 +4,6 @@
 
 import { extname } from "@std/path";
 import { existsSync } from "@std/fs";
-import { PNG } from "npm:pngjs";
 
 export async function fileExists(filePath: string): Promise<boolean> {
   try {
