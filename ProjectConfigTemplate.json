@@ -18,7 +18,7 @@
     "scheduler": "sgm_uniform",
     "steps": 20,
     "cfg": 7,
-    "seed": 123456789,
+    "seed": -1,
     "batch_size": 1
   },
   "testPrompts": [
