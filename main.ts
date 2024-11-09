@@ -1,12 +1,8 @@
 // lora tester 2024
 
-// TODO for next sesh 11/7/24
+// TODO for next sesh 11/8/24
 /**
- *  - investigate why the fuck i cant get
- *
  * - investigate how to programmatically bypass lora node to enable "reference outputs" for each prompt batch
- *
- * - verify that processed output from /history request still has prompt data on it
  *
  * -various inline TODOs all over the code
  */
@@ -19,6 +15,7 @@ import {
   getFilesWithExtension,
   getUniqueFilePath,
   loadJsonFile,
+  logInPlace,
   saveReadableStreamToFile,
 } from "./util.ts";
 import { createUniqueDirectory } from "./util.ts";
@@ -64,12 +61,21 @@ async function executePromptSync(
       const message = JSON.parse(event.data);
       if (
         message.data.prompt_id === prompt_id && message.data.value &&
-        message.data.max && message.data.value === message.data.max
+        message.data.max
       ) {
-        console.log(`Prompt ID ${prompt_id} completed.`);
-        socket.removeEventListener("message", onMessage); // Clean up listener
+        logInPlace(
+          `Progress: ${
+            Math.trunc((message.data.value / message.data.max) * 100)
+          }%`,
+        );
 
-        resolve(); // Resolve the promise to proceed to the next prompt
+        if (message.data.value === message.data.max) {
+          console.log("\n");
+          console.log(`Prompt ID ${prompt_id} completed.`);
+          socket.removeEventListener("message", onMessage); // Clean up listener
+
+          resolve(); // Resolve the promise to proceed to the next prompt
+        }
       }
     };
 
@@ -156,7 +162,6 @@ async function main() {
   const comfySocketUrl = `${
     (projectConf["serverUrl"] as string).replace(/^https?/, "ws")
   }/ws`;
-  console.log(comfySocketUrl);
   const comfySocket = new WebSocket(comfySocketUrl);
 
   try {
@@ -196,11 +201,17 @@ async function main() {
     Object.keys(projectConf["testPrompts"]).length *
     (projectConf["generationParams"]["batch_size"] as number);
 
-  projectConf["enableReferenceOutputs"] && (totalTestOutputs *= 2);
+  // TODO: support enableReferenceOutputs
+  // projectConf["enableReferenceOutputs"] && (totalTestOutputs *= 2);
 
   console.log("Expected image output count: ", totalTestOutputs);
 
-  // TODO: Prompt user after displaying expected image count to get consent first <3
+  //  Prompt user after displaying expected image count to get consent first <3
+  const bigAssBatchConsent = prompt("Consent to batch size: (y/n)");
+  if (bigAssBatchConsent === "n") {
+    comfySocket.close();
+    return;
+  }
 
   // ensure output and test run directories are created if necessary
   let testRunDir;
@@ -210,6 +221,7 @@ async function main() {
     testRunDir = await createUniqueDirectory(
       join(projectPath, TEST_RESULT_DIRNAME, projectConf["testRunName"]),
     );
+    console.log(`New test run directory: ${testRunDir}`);
   }
 
   // start generation loop
@@ -225,44 +237,46 @@ async function main() {
           continue;
         }
 
+        // make a copy so we actually get a fresh template for each prompt :P
+        let workflowStr = workflowTemplateStr;
+
         // TODO: proper aspect ratio testing, for now just copy baseResolution to height and width
         // iterate over a canned list of aspect ratios and calculate latent dimensions from base resolution
-        workflowTemplateStr = workflowTemplateStr.replaceAll(
+        workflowStr = workflowStr.replaceAll(
           "${height}",
           JSON.stringify(projectConf["baseResolution"]),
         );
-        workflowTemplateStr = workflowTemplateStr.replaceAll(
+        workflowStr = workflowStr.replaceAll(
           "${width}",
           JSON.stringify(projectConf["baseResolution"]),
         );
 
         // load triggerTokens into positive prompt
-        console.log(promptConf["positive"] as string);
         const positive = (promptConf["positive"] as string).replaceAll(
           "${triggerTokens}",
           projectConf["triggerTokens"],
         );
 
         // apply positive and negative
-        workflowTemplateStr = workflowTemplateStr.replaceAll(
+        workflowStr = workflowStr.replaceAll(
           "${positive}",
           positive,
         );
-        workflowTemplateStr = workflowTemplateStr.replaceAll(
+        workflowStr = workflowStr.replaceAll(
           "${negative}",
           promptConf["negative"],
         );
 
         // Apply lora model name and strength values
-        workflowTemplateStr = workflowTemplateStr.replaceAll(
+        workflowStr = workflowStr.replaceAll(
           '"${loraModel}"',
           JSON.stringify(lora),
         );
-        workflowTemplateStr = workflowTemplateStr.replaceAll(
+        workflowStr = workflowStr.replaceAll(
           '"${loraStrength}"',
           JSON.stringify(loraStrength),
         );
-        workflowTemplateStr = workflowTemplateStr.replaceAll(
+        workflowStr = workflowStr.replaceAll(
           '"${loraClipStrength}"',
           "1",
         ); // TODO: support loraClipStrength array
@@ -271,13 +285,13 @@ async function main() {
         const filenamePrefix = `${
           projectConf["testRunName"]
         }-${lora}^${loraStrength}-${promptConf["name"]}`;
-        workflowTemplateStr = workflowTemplateStr.replaceAll(
+        workflowStr = workflowStr.replaceAll(
           "${filenamePrefix}",
           filenamePrefix,
         );
 
         // Convert to JSON and execute
-        const payload = JSON.parse(workflowTemplateStr);
+        const payload = JSON.parse(workflowStr);
 
         const promptId = await executePromptSync(
           payload,
@@ -287,43 +301,47 @@ async function main() {
 
         // Fetch image from /history if we actually want to save it locally as well
         if (projectConf["saveOutputsLocally"] && testRunDir) {
+          // wait a bit because comfy fucking sucks balls
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+
+          // fetch prompt meta data necessary to fetch actual image (ass api design, 2 thumbs down)
           const historyResponse = await fetch(
-            `http://localhost:8188/history/${promptId}`,
-            {
-              method: "GET",
-              headers: {
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-                "User-Agent": "Mozilla/5.0", // Simulate a browser request
-                "Connection": "keep-alive",
-                "Host": "localhost:8188"
-              },
-            },
+            `${projectConf["serverUrl"]}/history/${promptId}`,
           );
+          const promptInfo = await historyResponse.json();
 
-          console.log(historyResponse);
+          // identify filename, subfolder, and type from historyResponse (cuz this fuckin makes sense somehow)
+          const imageMetas = promptInfo[promptId]["outputs"]["9"]["images"];
+          if (!imageMetas) {
+            console.log(
+              "Failed to retreive completed prompt meta for prompt ID: ",
+              promptId,
+            );
+            continue;
+          }
 
-          console.log(`http://localhost:8188/history/${promptId}`);
-          const promptInfo = await historyResponse.text();
-          console.log(promptInfo);
-          // if (!historyResponse.body) {
-          //   throw new Error(
-          //     "Failed to get ReadableStream from /history response!",
-          //   );
-          // }
-
-          // ./output/{}
-
-          // save history response as png
-          // const fullUniqueFilePath = getUniqueFilePath(join(testRunDir, `${filenamePrefix}.png`))
-          // await saveReadableStreamToFile(historyResponse.body, './sandbox/test.png')
+          // For all images in imageMeta, grab the filename, subfolder, and type and make a /view request, save as png
+          for (const imageMeta of imageMetas) {
+            const queryParams = new URLSearchParams({
+              ...imageMeta,
+            });
+            const viewResponse = await fetch(
+              `${projectConf["serverUrl"]}/view?${queryParams.toString()}`,
+            );
+            if (!viewResponse.ok) {
+              throw new Error("Failed to GET /view");
+            }
+            await saveReadableStreamToFile(
+              viewResponse.body!,
+              join(testRunDir, imageMeta["filename"]),
+            );
+          }
         }
-
-        return;
       }
     }
   }
-
-  //
+  comfySocket.close();
+  console.log("All done! <3");
 }
 
 if (import.meta.main) {

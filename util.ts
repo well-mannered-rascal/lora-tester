@@ -49,36 +49,14 @@ export async function getFilesWithExtension(
 export async function saveReadableStreamToFile(
   stream: ReadableStream<Uint8Array>,
   outputPath: string,
-): Promise<void> {
-  const reader = stream.getReader();
-  let chunks: Uint8Array[] = [];
-  let totalLength = 0;
-
-  // Read all chunks from the stream
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      chunks.push(value);
-      totalLength += value.length;
-    }
+) {
+  const file = await Deno.open(outputPath, { create: true, write: true });
+  try {
+    await stream.pipeTo(file.writable);
+    console.log(`Image saved successfully to ${outputPath}`);
+  } catch (error) {
+    console.error("Error saving image:", error);
   }
-
-  reader.cancel();
-
-  // Concatenate all chunks into a single Uint8Array
-  const imageData = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    imageData.set(chunk, offset);
-    offset += chunk.length;
-  }
-
-  console.log(imageData.toString());
-
-  // Save the image data as a PNG file
-  await Deno.writeFile(outputPath, imageData);
-  console.log(`File saved successfully to ${outputPath}`);
 }
 
 /**
@@ -129,8 +107,12 @@ export async function createUniqueDirectory(
   // Create the new unique directory
   await Deno.mkdir(uniqueDirPath);
 
-  console.log(`Directory created: ${uniqueDirPath}`);
   return uniqueDirPath;
+}
+
+export function logInPlace(message: string) {
+  // Move the cursor to the beginning of the line and clear it
+  Deno.stdout.write(new TextEncoder().encode(`\r\x1b[K${message}`));
 }
 
 // /**
