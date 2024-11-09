@@ -13,7 +13,6 @@ import { ensureDir } from "@std/fs";
 import {
   fileExists,
   getFilesWithExtension,
-  getUniqueFilePath,
   loadJsonFile,
   logInPlace,
   saveReadableStreamToFile,
@@ -56,7 +55,7 @@ async function executePromptSync(
   console.log(`Prompt ID ${prompt_id} submitted, awaiting completion...`);
 
   // Wait for the WebSocket notification for this specific prompt ID
-  await new Promise<void>((resolve, reject) => {
+  await new Promise<void>((resolve) => {
     const onMessage = (event: MessageEvent) => {
       const message = JSON.parse(event.data);
       if (
@@ -196,7 +195,7 @@ async function main() {
 
   // calculate total image output number, multiplied by two when enableReferenceOutputs is enabled
   // TODO: Be smart and actually check how many test prompts are enabled
-  let totalTestOutputs = remoteLoraNames.length *
+  const totalTestOutputs = remoteLoraNames.length *
     (projectConf["loraStrengthValues"] as number[]).length *
     Object.keys(projectConf["testPrompts"]).length *
     (projectConf["generationParams"]["batch_size"] as number);
