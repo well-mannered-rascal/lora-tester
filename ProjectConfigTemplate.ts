@@ -1,4 +1,4 @@
-{
+export const ProjectConfigTemplate = {
   "testRunName": "",
   "serverUrl": "http://localhost:8188",
   "triggerTokens": "",

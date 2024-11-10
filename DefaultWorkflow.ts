@@ -1,4 +1,4 @@
-{
+export const DefaultWorkflow = {
   "3": {
     "inputs": {
       "seed": "${seed}",

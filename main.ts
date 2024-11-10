@@ -19,6 +19,9 @@ import {
 } from "./util.ts";
 import { createUniqueDirectory } from "./util.ts";
 
+import { DefaultWorkflow } from "./DefaultWorkflow.ts";
+import { ProjectConfigTemplate } from "./ProjectConfigTemplate.ts";
+
 // CONSTANTS
 const PROJECT_CONF_FILENAME = "project.json" as const;
 const TEST_RESULT_DIRNAME = "test_runs";
@@ -101,9 +104,10 @@ async function main() {
   // if no config file, copy and prompt user to edit config before re-running
   if (!hasProjectConfig) {
     const projectConfPath = `${projectPath}/${PROJECT_CONF_FILENAME}`;
-    await Deno.copyFile(
-      join(".", "ProjectConfigTemplate.json"),
+    await Deno.writeFile(
       projectConfPath,
+      new TextEncoder().encode(JSON.stringify(ProjectConfigTemplate, null, 2)),
+      
     );
 
     console.log("New project detected, adding default project config.");
@@ -175,9 +179,8 @@ async function main() {
   }
 
   // load workflow template as text and apply top level project conf generationParams
-  let workflowTemplateStr = await Deno.readTextFile(
-    join(".", "default_workflow.json"),
-  );
+  let workflowTemplateStr = JSON.stringify(DefaultWorkflow);
+  
   for (let [key, value] of Object.entries(projectConf["generationParams"])) {
     const placeholder = `"\${${key}}"`;
 
@@ -223,6 +226,7 @@ async function main() {
     console.log(`New test run directory: ${testRunDir}`);
   }
 
+  let currentImage = 1;
   // start generation loop
   for (const lora of remoteLoraNames) {
     for (const loraStrength of projectConf["loraStrengthValues"]) {
@@ -334,6 +338,9 @@ async function main() {
               viewResponse.body!,
               join(testRunDir, imageMeta["filename"]),
             );
+
+            console.log(`Completed ${currentImage}/${totalTestOutputs}`);
+            currentImage += 1;
           }
         }
       }
