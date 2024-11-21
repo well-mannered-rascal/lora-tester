@@ -6,12 +6,18 @@ Utility for batch testing stable diffusion lora models.
 
 `./lora_tester.exe <path/to/lora/models>`
 
-If this is the first time running for the given directory, a `project.json` file will be generated. You will be prompted to edit the configuration file before running again. This file contains all of the
-necessary configuration and must be fully configured for the program to run correctly.
+If this is the first time running for the given directory, a `project.json` file
+will be generated. You will be prompted to edit the configuration file before
+running again. This file contains all of the necessary configuration and must be
+fully configured for the program to run correctly.
 
 ## Configuration
-A project.json template will be generated on first run of the command in the directory specified by the user.
+
+A project.json template will be generated on first run of the command in the
+directory specified by the user.
+
 ### project.json
+
 ```
 {
   "testRunName": "",
